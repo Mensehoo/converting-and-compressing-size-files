@@ -11,7 +11,7 @@ import tempfile
 import os
 from tkinter import filedialog, messagebox
 
-# Fungsi Gabung JPG dan Konversi ke PDF
+# Merge JPG and Convert to PDF Function
 def jpg_to_pdf():
     files = filedialog.askopenfilenames(filetypes=[("JPG Files", "*.jpg")])
     if not files:
@@ -20,24 +20,24 @@ def jpg_to_pdf():
     pdf_path = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF Files", "*.pdf")])
     if pdf_path:
         images[0].save(pdf_path, save_all=True, append_images=images[1:])
-        messagebox.showinfo("Sukses", "JPG berhasil dikonversi ke PDF!")
+        messagebox.showinfo("Success”, “JPG successfully converted to PDF!”)
 
-# Fungsi Konversi Word ke PDF
+# Word to PDF Conversion Function
 def word_to_pdf():
     file = filedialog.askopenfilename(filetypes=[("Word Files", "*.docx")])
     if file:
         pdf_path = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF Files", "*.pdf")])
         if pdf_path:
             docx_to_pdf(file, pdf_path)
-            messagebox.showinfo("Sukses", "Word berhasil dikonversi ke PDF!")
+            messagebox.showinfo("Success", "Word successfully converted to PDF!")
 
-# Fungsi Konversi PPT ke PDF
+# PPT to PDF Conversion Function
 def ppt_to_pdf():
     file = filedialog.askopenfilename(filetypes=[("PowerPoint Files", "*.pptx")])
     if file:
         pdf_path = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF Files", "*.pdf")])
         if pdf_path:
-            # Gunakan path absolut untuk menghindari masalah path
+            # Use absolute paths to avoid path problems
             file = os.path.abspath(file)
             pdf_path = os.path.abspath(pdf_path)
 
@@ -47,13 +47,13 @@ def ppt_to_pdf():
                 ppt = powerpoint.Presentations.Open(file)
                 ppt.SaveAs(pdf_path, 32)  # 32 = pdf format
                 ppt.Close()
-                messagebox.showinfo("Sukses", "PPT berhasil dikonversi ke PDF!")
+                messagebox.showinfo("Success", "PPT successfully converted to PDF!")
             except Exception as e:
-                messagebox.showerror("Error", f"Gagal mengonversi: {e}")
+                messagebox.showerror("Error", f"Failed to convert: {e}")
             finally:
                 powerpoint.Quit()
 
-# Fungsi Kompres PDF
+# PDF Compress Function
 def compress_pdf():
     file = filedialog.askopenfilename(filetypes=[("PDF Files", "*.pdf")])
     if file:
@@ -61,13 +61,13 @@ def compress_pdf():
         if pdf_path:
             pdf_document = fitz.open(file)
             
-            # Simpan ke PDF baru dengan kompresi gambar dan penghapusan konten sampah
+            # Save to new PDF with image compression and junk content removal
             pdf_document.save(pdf_path, garbage=4, deflate=True, deflate_images=True)
             pdf_document.close()
             
-            messagebox.showinfo("Sukses", "PDF berhasil dikompres dengan ukuran lebih kecil!")
+            messagebox.showinfo("Success", "PDF successfully compressed to a smaller size!")
 
-# Fungsi Kompres PPT
+# PPT Compress Function
 def compress_ppt():
     file = filedialog.askopenfilename(filetypes=[("PowerPoint Files", "*.pptx")])
     if file:
@@ -77,54 +77,54 @@ def compress_ppt():
         if output_path:
             for slide in ppt.slides:
                 for shape in slide.shapes:
-                    # Kompres gambar
-                    if shape.shape_type == 13:  # Bentuk gambar
+                    # Compress images
+                    if shape.shape_type == 13:  # Image shape
                         image = shape.image
                         with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_img:
-                            # Simpan gambar sementara dengan kualitas rendah
+                            # Save temporary image in low quality
                             image_bytes = image.blob
                             with open(tmp_img.name, "wb") as f:
                                 f.write(image_bytes)
 
-                            # Buka gambar dan kompres
+                            # Open image and compress
                             img = Image.open(tmp_img.name)
-                            if img.mode == 'RGBA':  # Konversi dari RGBA ke RGB jika perlu
+                            if img.mode == 'RGBA':  # Convert from RGBA to RGB if necessary
                                 img = img.convert('RGB')
-                            img = img.resize((int(img.width * 0.4), int(img.height * 0.4)), Image.LANCZOS)  # Resize ke 40%
-                            img.save(tmp_img.name, quality=50)  # Simpan dengan kualitas gambar lebih rendah
+                            img = img.resize((int(img.width * 0.4), int(img.height * 0.4)), Image.LANCZOS)  # Resize to 40%
+                            img.save(tmp_img.name, quality=50)  # Save with lower image quality
 
-                            # Gantikan gambar lama dengan yang baru
+                            # Replace the old image with the new one
                             shape.element.getparent().remove(shape.element)
                             slide.shapes.add_picture(tmp_img.name, shape.left, shape.top, shape.width, shape.height)
 
-                        os.remove(tmp_img.name)  # Hapus file sementara
+                        os.remove(tmp_img.name)  # Delete temporary files
 
-                    # Kurangi ukuran teks jika ada
+                    # Reduce text size if applicable
                     elif shape.has_text_frame:
                         for paragraph in shape.text_frame.paragraphs:
                             for run in paragraph.runs:
-                                if run.font.size and run.font.size.pt > 10:  # Atur batas minimum untuk ukuran font
-                                    run.font.size = Pt(max(10, run.font.size.pt * 0.8))  # Kurangi ukuran font sebesar 80%
+                                if run.font.size and run.font.size.pt > 10:  # Set a minimum limit for font size
+                                    run.font.size = Pt(max(10, run.font.size.pt * 0.8))  # Reduce font size by 80%
                     
-                    # Hapus elemen bentuk lain yang tidak perlu (opsional)
-                    if shape.shape_type not in [1, 13]:  # Misal, hapus elemen selain teks dan gambar
+                    # Remove other unnecessary form elements (optional)
+                    if shape.shape_type not in [1, 13]:  # For example, remove elements other than text and images.
                         shape._element.getparent().remove(shape._element)
 
-            # Simpan hasilnya
+            # Save the results
             ppt.save(output_path)
-            messagebox.showinfo("Sukses", "PPT berhasil dikompres dengan ukuran lebih kecil!")
-
-# GUI dengan Tkinter
+            messagebox.showinfo("Success", "PPT successfully compressed to a smaller size!")
+            
+#GUI with Tkinter
 def create_gui():
     window = tk.Tk()
     window.title("File Converter & Compressor")
     window.geometry("400x400")
 
-    tk.Button(window, text="Gabung JPG & Konversi ke PDF", command=jpg_to_pdf).pack(pady=10)
-    tk.Button(window, text="Konversi Word ke PDF", command=word_to_pdf).pack(pady=10)
-    tk.Button(window, text="Konversi PPT ke PDF", command=ppt_to_pdf).pack(pady=10)
-    tk.Button(window, text="Kompres PDF", command=compress_pdf).pack(pady=10)
-    tk.Button(window, text="Kompres PPT", command=compress_ppt).pack(pady=10)
+    tk.Button(window, text="Merge JPG and Convert to PDF", command=jpg_to_pdf).pack(pady=10)
+    tk.Button(window, text="Convert Word to PDF", command=word_to_pdf).pack(pady=10)
+    tk.Button(window, text="COnvert PPT to PDF", command=ppt_to_pdf).pack(pady=10)
+    tk.Button(window, text="Compress PDF", command=compress_pdf).pack(pady=10)
+    tk.Button(window, text="Compress PPT", command=compress_ppt).pack(pady=10)
 
     window.mainloop()
 
